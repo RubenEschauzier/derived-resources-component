@@ -10,6 +10,7 @@ import {
 } from '@solid/community-server';
 import type { DerivationConfig } from '../DerivationConfig';
 import { SelectorParser } from './SelectorParser';
+import type { FileIdentifierMapper } from '@solid/community-server';
 
 export interface GlobParameters {
   glob: string;
@@ -28,9 +29,27 @@ export class GlobSelectorParser extends SelectorParser {
 
   protected readonly store: ResourceStore;
 
-  public constructor(store: ResourceStore) {
+  protected readonly customTypes: Record<string,string> = {
+    'nq': 'application/n-quads',
+    'rq': 'application/sparql-query',
+  };
+  protected readonly mapper: FileIdentifierMapper;
+  
+  /**
+   * 
+   * @param store 
+   * @param customTypes - @range {json} 
+   */
+  public constructor(
+    store: ResourceStore, 
+    mapper: FileIdentifierMapper,
+    customTypes?: Record<string, string>) {
     super();
     this.store = store;
+    this.mapper = mapper;
+    if (customTypes){
+      this.customTypes = customTypes
+    }
   }
 
   public async handle({ selectors }: DerivationConfig): Promise<ResourceIdentifier[]> {
@@ -82,7 +101,26 @@ export class GlobSelectorParser extends SelectorParser {
 
     this.logger.debug(`Recursively handling all paths starting with "${head}" and ending with "${subTail}"`);
     for (const child of childPaths) {
-      if (child.startsWith(head) && child.endsWith(subTail)) {
+      if (!child.startsWith(head)){
+        continue;
+      }
+
+      if (child.endsWith(subTail)){
+        yield* this.handleSelector(`${child}${rest}`);
+      }
+      // If a filter handles only (e.g.) **/*.nq and our child paths are URLs (without extension)
+      // we need to find the contentType of the path, map it to extensions using customTypes
+      // and if we get a match run selector again
+      const expectedContentType = this.customTypes[subTail];
+      if (!expectedContentType){
+        return;
+      }
+
+      const link = await this.mapper.mapUrlToFilePath(
+        { path: child }, false
+      );
+
+      if (link.contentType === expectedContentType) {
         yield* this.handleSelector(`${child}${rest}`);
       }
     }

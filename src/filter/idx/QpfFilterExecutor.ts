@@ -101,7 +101,6 @@ export class QpfFilterExecutor extends FilterExecutor {
   public async handle({ representations, config }: FilterExecutorInput): Promise<Representation> {
     const filter = this.generateFilter(isQueryResourceIdentifier(config.identifier) ? config.identifier.query : {});
     const showData = isQueryResourceIdentifier(config.identifier) ? config.identifier.query.data === 'true' : false;
-
     const streams = await Promise.all(representations.map(
       async(representation): Promise<Readable> => this.quadPatternExecutor.handle({ filter, representation }),
     ));
@@ -172,7 +171,6 @@ export class QpfFilterExecutor extends FilterExecutor {
       };
       quads.push(quad(fragment, HYDRA.terms.next, namedNode(this.identifierToString(nextIdentifier))));
     }
-
     return quads;
   }
 

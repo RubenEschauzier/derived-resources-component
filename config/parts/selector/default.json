@@ -11,6 +11,7 @@
       "parser": {
         "@id": "urn:solid-server:default:GlobSelectorParser",
         "@type": "GlobSelectorParser",
+        "mapper": { "@id": "urn:solid-server:default:FileIdentifierMapper" },
         "store": { "@id": "urn:solid-server:default:ResourceStore_Patching" }
       }
     }

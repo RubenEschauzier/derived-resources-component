@@ -24,6 +24,8 @@
     "start:debug": "community-solid-server -c @css:config/file-root.json config/derived-auth.json -f .data -m . -t",
     "start:example": "community-solid-server -c config/main.json config/derived-auth.json config/example.json -m .",
     "start:solidbench": "community-solid-server -c config/main-solidbench-derived-multi-fixed.json config/derived.json -f ../experiment-adaptive-link-traversal/generated/out-fragments/http/solidbench-server_3000 -b http://solidbench-server:3000 -m .",
+    "start:solidbench-extension-based": "community-solid-server -c config/main-solidbench-derived-sign-mapper.json config/derived.json -f ../experiment-adaptive-link-traversal-with-extensions/generated/out-fragments/http/solidbench-server_3000 -b http://solidbench-server:3000 -m .",
+    "start:solidbench-debug": "community-solid-server -c config/main-solidbench-derived-multi-fixed.json config/derived.json -f ../experiment-adaptive-link-traversal/generated/out-fragments/http/solidbench-server_3000 -b http://solidbench-server:3000 -m . -l debug",
     "build": "npm run build:ts && npm run build:components",
     "build:components": "componentsjs-generator -s src -c dist/components -i .componentsignore -r derived",
     "build:ts": "tsc",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "@tsconfig/node18": "^18.2.4",
     "@types/jest": "^29.5.12",
+    "@types/rdf-validate-shacl": "^0.4.9",
     "componentsjs-generator": "^3.1.2",
     "jest": "^29.7.0",
     "opinionated-eslint-config": "^0.1.0",

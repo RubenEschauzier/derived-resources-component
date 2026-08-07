@@ -54,13 +54,11 @@ export class CachedFilterExecutor extends FilterExecutor {
     if (!checksum) {
       return this.source.handle(input);
     }
-
     const cached = this.cache.get(key);
     if (cached?.checksum === checksum) {
       this.logger.debug(`Cache hit with key ${key} and checksum ${checksum}`);
       return cachedToRepresentation(cached);
     }
-
     const representation = await this.source.handle(input);
     return this.cacheRepresentation(key, checksum, representation);
   }

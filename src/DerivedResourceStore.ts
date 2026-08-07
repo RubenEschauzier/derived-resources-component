@@ -47,7 +47,6 @@ export class DerivedResourceStore extends PassthroughStore {
     } is the first resource that exists starting from ${identifier.path}`);
     const identifierExists = firstResource.metadata.identifier.value === identifier.path;
     const config = await this.manager.getDerivationConfig(identifier, firstResource.metadata);
-
     if (!config && identifierExists) {
       return firstResource;
     }

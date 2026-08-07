@@ -50,7 +50,6 @@ export async function take(stream: Readable, amount: number): Promise<{ head: un
   if (stream.readableEnded) {
     return { head: [], tail: stream };
   }
-
   const head = await new Promise<unknown[]>((resolve, reject): void => {
     const result: unknown[] = [];
     function listener(data: unknown): void {
