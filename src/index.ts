@@ -40,7 +40,9 @@ export * from './selector/AuthorizedSelectorParser';
 export * from './selector/BaseSelectorHandler';
 export * from './selector/GlobSelectorParser';
 export * from './selector/SelectorHandler';
+export * from './selector/SelectorHandlerCachedStore';
 export * from './selector/SelectorParser';
+export * from './selector/StoreRepresentation';
 
 export * from './util/CacheUtil';
 
@@ -51,4 +53,5 @@ export * from './DerivationManager';
 export * from './DerivedResourceStore';
 export * from './QueryResourceIdentifier';
 export * from './QueryTargetExtractor';
+export * from './SelectorStorePool';
 export * from './Vocabularies';

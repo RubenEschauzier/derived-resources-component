@@ -1,0 +1,27 @@
+{
+  "@context": [
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solid/community-server/^7.0.0/components/context.jsonld",
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solidlab/derived-resources-component/^1.0.0/components/context.jsonld"
+  ],
+  "@graph": [
+    {
+      "comment": "In-memory pool caching N3.Store instances keyed by selectors.",
+      "@id": "urn:solid-server:derived:SelectorStorePool",
+      "@type": "SelectorStorePool",
+      "settings_max": 100
+    },
+    {
+      "comment": "Selector handler that leverages SelectorStorePool to avoid reading and draining files repeatedly.",
+      "@id": "urn:solid-server:default:SelectorHandler",
+      "@type": "SelectorHandlerCachedStore",
+      "pool": { "@id": "urn:solid-server:derived:SelectorStorePool" },
+      "store": { "@id": "urn:solid-server:default:ResourceStore_Patching" },
+      "parser": {
+        "@id": "urn:solid-server:default:GlobSelectorParser",
+        "@type": "GlobSelectorParser",
+        "mapper": { "@id": "urn:solid-server:default:FileIdentifierMapper" },
+        "store": { "@id": "urn:solid-server:default:ResourceStore_Patching" }
+      }
+    }
+  ]
+}

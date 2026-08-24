@@ -5,6 +5,7 @@ import { Store } from 'n3';
 import type { FilterExecutorInput } from './FilterExecutor';
 import { FilterExecutor } from './FilterExecutor';
 import type { N3FilterExecutor } from './N3FilterExecutor';
+import { isStoreRepresentation } from '../selector/StoreRepresentation';
 
 /**
  * Converts the input quad streams into a single N3.js store and calls an {@link N3FilterExecutor}.
@@ -32,6 +33,15 @@ export class StoreDataFilterExecutor extends FilterExecutor {
   }
 
   public async handle(input: FilterExecutorInput): Promise<Representation> {
+    // If its already a store representation (when using cached stores)
+    const firstRep = input.representations[0];
+    if (input.representations.length === 1 && isStoreRepresentation(firstRep)) {
+      return this.source.handle({
+        ...input,
+        data: firstRep.store,
+      });
+    }
+
     const data = new Store();
     const importPromises: Promise<unknown>[] = [];
     for (const representation of input.representations) {
