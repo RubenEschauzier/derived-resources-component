@@ -6,6 +6,7 @@ import type {
   Representation,
 } from '@solid/community-server';
 import {
+  APPLICATION_JSON,
   BasicRepresentation,
   createErrorMessage,
   getLoggerFor,
@@ -41,12 +42,30 @@ export class SparqlFilterExecutor extends N3FilterExecutor<string> {
     this.logger.debug(`Using filter with contents ${query}`);
 
     try {
-      const result = await this.engine.queryQuads(query, { sources: [ data ]});
-      return new BasicRepresentation(
-        Readable.from(this.convertAsyncIterator(result)),
-        config.identifier,
-        INTERNAL_QUADS,
-      );
+      const resultTest = await this.engine.query(query, { sources: [ data ] });
+      if (resultTest.resultType === 'bindings'){
+        const mediaType = 'application/sparql-results+json'; 
+        const { data } = await this.engine.resultToString(resultTest, mediaType);        
+        return new BasicRepresentation(
+          Readable.from(data),
+          config.identifier,
+          mediaType
+        );
+      }
+      else if (resultTest.resultType === 'quads'){
+        return new BasicRepresentation(
+          Readable.from(this.convertAsyncIterator(await resultTest.execute())),
+          config.identifier,
+          INTERNAL_QUADS,
+        );
+      }
+      throw new Error(`ASK or UPDATE queries are not supported, got: ${resultTest.resultType}`);
+      // const result = await this.engine.queryQuads(query, { sources: [ data ]});
+      // return new BasicRepresentation(
+      //   Readable.from(this.convertAsyncIterator(result)),
+      //   config.identifier,
+      //   INTERNAL_QUADS,
+      // );
     } catch (error: unknown) {
       throw new InternalServerError(
         `There was a problem applying the filter while generating the derived resource: ${createErrorMessage(error)}`,
