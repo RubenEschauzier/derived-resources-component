@@ -71,6 +71,7 @@
             "source": {
               "@type": "WaterfallHandler",
               "handlers": [
+                { "@type": "SparqlPatternFilterExecutor" },
                 { "@type": "SparqlFilterExecutor" },
                 { "@type": "ShaclFilterExecutor" }
               ]

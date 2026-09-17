@@ -4,6 +4,7 @@ import { SelectorStorePool } from '../../src/SelectorStorePool';
 const { quad, namedNode, literal } = DataFactory;
 
 describe('SelectorStorePool', (): void => {
+  const modified = new Date('2024-01-01T00:00:00.000Z');
   let pool: SelectorStorePool;
 
   beforeEach((): void => {
@@ -26,15 +27,16 @@ describe('SelectorStorePool', (): void => {
     expect(pool.hasStore(selectors)).toBe(false);
     expect(pool.getStore(selectors)).toBeUndefined();
 
-    pool.setStore(selectors, store);
+    pool.setStore(selectors, { store, modified });
     expect(pool.hasStore(selectors)).toBe(true);
-    expect(pool.getStore(selectors)).toBe(store);
+    expect(pool.getStore(selectors)?.store).toBe(store);
+    expect(pool.getStore(selectors)?.modified).toBe(modified);
   });
 
   it('invalidates a specific selector key.', (): void => {
     const selectors = [ 'http://example.com/data/*' ];
     const store = new Store();
-    pool.setStore(selectors, store);
+    pool.setStore(selectors, { store, modified });
     expect(pool.hasStore(selectors)).toBe(true);
 
     expect(pool.invalidate(selectors)).toBe(true);
@@ -44,7 +46,7 @@ describe('SelectorStorePool', (): void => {
   it('invalidates matching paths.', (): void => {
     const selectors = [ 'http://example.com/data/**' ];
     const store = new Store();
-    pool.setStore(selectors, store);
+    pool.setStore(selectors, { store, modified });
 
     expect(pool.hasStore(selectors)).toBe(true);
 
@@ -58,8 +60,8 @@ describe('SelectorStorePool', (): void => {
   });
 
   it('clears all stores.', (): void => {
-    pool.setStore([ 'http://example.com/1' ], new Store());
-    pool.setStore([ 'http://example.com/2' ], new Store());
+    pool.setStore([ 'http://example.com/1' ], { store: new Store(), modified });
+    pool.setStore([ 'http://example.com/2' ], { store: new Store(), modified });
     expect(pool.hasStore([ 'http://example.com/1' ])).toBe(true);
 
     pool.clear();

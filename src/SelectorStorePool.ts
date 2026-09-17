@@ -19,6 +19,21 @@ export interface SelectorStorePoolSettings {
 }
 
 /**
+ * A cached {@link Store} together with the metadata needed to validate caches further down the chain.
+ */
+export interface PooledStore {
+  /**
+   * The populated N3.Store.
+   */
+  store: Store;
+  /**
+   * The most recent modified date of all the resources that were merged into the store.
+   * This is cached alongside the store as a pool hit never touches the backend again.
+   */
+  modified: Date;
+}
+
+/**
  * Manages an in-memory pool/cache of {@link Store} (N3.Store) instances keyed by selectors.
  *
  * Provides thread-safe, normalized key-based storage, retrieval, and path-based invalidation
@@ -26,18 +41,18 @@ export interface SelectorStorePoolSettings {
  */
 export class SelectorStorePool {
   protected readonly logger = getLoggerFor(this);
-  protected readonly cache: LRUCache<string, Store>;
+  protected readonly cache: LRUCache<string, PooledStore>;
 
   public constructor(settings?: SelectorStorePoolSettings) {
     const max = settings?.max ?? 50;
     const maxSize = settings?.maxSize;
     const ttl = settings?.ttl;
 
-    this.cache = new LRUCache<string, Store>({
+    this.cache = new LRUCache<string, PooledStore>({
       max,
       maxSize,
       ttl,
-      ...maxSize ? { sizeCalculation: (store: Store): number => store.size + 1 } : {},
+      ...maxSize ? { sizeCalculation: ({ store }: PooledStore): number => store.size + 1 } : {},
     });
   }
 
@@ -66,9 +81,9 @@ export class SelectorStorePool {
    * Retrieves an N3.Store for the given selectors from the cache, if present.
    *
    * @param selectors - Array of selector strings.
-   * @returns The cached {@link Store}, or `undefined` on a cache miss.
+   * @returns The cached {@link PooledStore}, or `undefined` on a cache miss.
    */
-  public getStore(selectors: string[]): Store | undefined {
+  public getStore(selectors: string[]): PooledStore | undefined {
     const key = this.getSelectorKey(selectors);
     return this.cache.get(key);
   }
@@ -77,12 +92,12 @@ export class SelectorStorePool {
    * Stores an N3.Store in the pool under the given selectors.
    *
    * @param selectors - Array of selector strings.
-   * @param store - The populated {@link Store} instance to cache.
+   * @param pooled - The populated {@link PooledStore} entry to cache.
    */
-  public setStore(selectors: string[], store: Store): void {
+  public setStore(selectors: string[], pooled: PooledStore): void {
     const key = this.getSelectorKey(selectors);
-    this.logger.debug(`Caching N3.Store for selector key: ${key} (size: ${store.size} quads)`);
-    this.cache.set(key, store);
+    this.logger.debug(`Caching N3.Store for selector key: ${key} (size: ${pooled.store.size} quads)`);
+    this.cache.set(key, pooled);
   }
 
   /**

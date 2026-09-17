@@ -30,6 +30,7 @@ export * from './filter/FilterHandler';
 export * from './filter/LatestFilterExecutor';
 export * from './filter/N3FilterExecutor';
 export * from './filter/ShaclFilterExecutor';
+export * from './filter/SparqlPatternFilterExecutor';
 export * from './filter/SparqlFilterExecutor';
 export * from './filter/StoreDataFilterExecutor';
 
