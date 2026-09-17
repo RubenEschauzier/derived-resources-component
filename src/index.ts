@@ -45,6 +45,8 @@ export * from './selector/SelectorHandlerCachedStore';
 export * from './selector/SelectorParser';
 export * from './selector/StoreRepresentation';
 
+export * from './storage/MultipleFixedContentTypeMapper';
+
 export * from './util/CacheUtil';
 
 export * from './BaseDerivationManager';

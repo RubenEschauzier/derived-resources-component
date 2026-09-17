@@ -1,0 +1,8 @@
+.data
+.git
+.eslintcache
+coverage
+dist
+node_modules
+test
+documentation
