@@ -10,11 +10,13 @@ export * from './filter/idx/BaseQuadPatternExecutor';
 export * from './filter/idx/CachedQuadPatternExecutor';
 export * from './filter/idx/IndexFilterExecutor';
 export * from './filter/idx/QpfFilterExecutor';
+export * from './filter/PatternBatchFilterExecutor';
 export * from './filter/idx/QuadPatternExecutor';
 
 export * from './filter/parser/FilterParser';
 export * from './filter/parser/InputFilterParser';
 export * from './filter/parser/MappingFilterParser';
+export * from './filter/parser/PatternBatchFilterParser';
 export * from './filter/parser/QpfFilterParser';
 export * from './filter/parser/QuadFilterParser';
 export * from './filter/parser/QuadPatternFilterParser';
@@ -58,3 +60,4 @@ export * from './QueryResourceIdentifier';
 export * from './QueryTargetExtractor';
 export * from './SelectorStorePool';
 export * from './Vocabularies';
+export * from './selector/SelectorHandlerFileStore';

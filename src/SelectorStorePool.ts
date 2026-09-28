@@ -96,7 +96,8 @@ export class SelectorStorePool {
    */
   public setStore(selectors: string[], pooled: PooledStore): void {
     const key = this.getSelectorKey(selectors);
-    this.logger.debug(`Caching N3.Store for selector key: ${key} (size: ${pooled.store.size} quads)`);
+    // The size is not logged: an N3 store counts its quads to report it
+    this.logger.debug(`Caching N3.Store for selector key: ${key}`);
     this.cache.set(key, pooled);
   }
 

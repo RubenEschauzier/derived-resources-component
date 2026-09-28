@@ -35,6 +35,7 @@
       "source": {
         "@type": "WaterfallHandler",
         "handlers": [
+          { "@type": "PatternBatchFilterParser" },
           { "@type": "QpfFilterParser" },
           { "@type": "QuadPatternFilterParser" },
           { "@type": "ShaclFilterParser" },
@@ -54,6 +55,12 @@
           {
             "@id": "urn:solid-server:default:LatestFilterExecutor",
             "@type": "LatestFilterExecutor"
+          },
+          {
+            "comment": "Answers several quad patterns, given in the query string, in one request.",
+            "@id": "urn:solid-server:default:PatternBatchFilterExecutor",
+            "@type": "PatternBatchFilterExecutor",
+            "maxPatterns": 20
           },
           {
             "@id": "urn:solid-server:default:QpfFilterExecutor",

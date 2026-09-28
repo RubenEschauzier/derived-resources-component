@@ -36,7 +36,8 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
 
     if (cached) {
       this.logger.debug(
-        `SelectorStorePool hit for selectors: [${config.selectors.join(', ')}] (size: ${cached.store.size} quads)`,
+        // Not the size: an N3 store counts its quads to report it, and this runs on every hit
+        `SelectorStorePool hit for selectors: [${config.selectors.join(', ')}]`,
       );
       return [ createStoreRepresentation(cached.store, config.identifier, cached.modified) ];
     }
@@ -66,34 +67,13 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
    */
   protected async populateStore(config: DerivationConfig, key: string): Promise<PooledStore> {
     try {
-      const fileRepresentations = await super.handle(config);
-
-      // Import all representation data streams into store.
-      // The most recent timestamp of all inputs is kept,
-      // as caches further down the chain use it to detect changes in the input data.
-      const store = new Store();
-      const importPromises: Promise<unknown>[] = [];
-      let modified = new Date(0);
-
-      for (const representation of fileRepresentations) {
-        const timestamp = representation.metadata.get(DC.terms.modified)?.value;
-        if (timestamp) {
-          const date = new Date(timestamp);
-          if (date > modified) {
-            modified = date;
-          }
-        }
-        const emitter = store.import(representation.data);
-        importPromises.push(once(emitter, 'end'));
-      }
-
-      await Promise.all(importPromises);
+      const pooled = await this.buildStore(config);
+      const { store } = pooled;
 
       this.logger.debug(
-        `Successfully loaded ${store.size} quads into in-memory store for selectors: [${config.selectors.join(', ')}]`,
+        `Successfully loaded the in-memory store for selectors: [${config.selectors.join(', ')}]`,
       );
 
-      const pooled = { store, modified };
       this.pool.setStore(config.selectors, pooled);
       return pooled;
     } finally {
@@ -101,5 +81,30 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
       // finished store instead of starting the build over.
       delete this.pending[key];
     }
+  }
+
+  /**
+   * Reads the selected inputs into a new {@link Store}.
+   */
+  protected async buildStore(config: DerivationConfig): Promise<PooledStore> {
+    // Import all representation data streams into store, each as soon as it is read, so only a
+    // bounded number of inputs is ever open at once.
+    // The most recent timestamp of all inputs is kept,
+    // as caches further down the chain use it to detect changes in the input data.
+    const store = new Store();
+    let modified = new Date(0);
+
+    await this.forEachRepresentation(config, async(representation): Promise<void> => {
+      const timestamp = representation.metadata.get(DC.terms.modified)?.value;
+      if (timestamp) {
+        const date = new Date(timestamp);
+        if (date > modified) {
+          modified = date;
+        }
+      }
+      await once(store.import(representation.data), 'end');
+    });
+
+    return { store, modified };
   }
 }

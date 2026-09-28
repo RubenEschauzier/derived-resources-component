@@ -11,16 +11,44 @@
       "settings_max": 100
     },
     {
-      "comment": "Selector handler that leverages SelectorStorePool to avoid reading and draining files repeatedly.",
+      "comment": "Selector handler that leverages SelectorStorePool to avoid reading and draining files repeatedly, building each store by reading the selected files from disk directly.",
       "@id": "urn:solid-server:default:SelectorHandler",
-      "@type": "SelectorHandlerCachedStore",
-      "pool": { "@id": "urn:solid-server:derived:SelectorStorePool" },
-      "store": { "@id": "urn:solid-server:default:ResourceStore_Patching" },
+      "@type": "SelectorHandlerFileStore",
+      "pool": {
+        "@id": "urn:solid-server:derived:SelectorStorePool"
+      },
+      "store": {
+        "@id": "urn:solid-server:derived:ResourceStore_SelectorInput"
+      },
       "parser": {
         "@id": "urn:solid-server:default:GlobSelectorParser",
         "@type": "GlobSelectorParser",
-        "mapper": { "@id": "urn:solid-server:default:FileIdentifierMapper" },
-        "store": { "@id": "urn:solid-server:default:ResourceStore_Patching" }
+        "mapper": {
+          "@id": "urn:solid-server:default:FileIdentifierMapper"
+        },
+        "store": {
+          "@id": "urn:solid-server:derived:ResourceStore_SelectorInput"
+        }
+      },
+      "mapper": {
+        "@id": "urn:solid-server:default:FileIdentifierMapper"
+      }
+    },
+    {
+      "comment": "Reads the inputs of a derived resource straight from the backend. The resource cache in front of the backend would keep a second copy of every input next to the pooled store built from them, and copying them into it costs more than reading them.",
+      "@id": "urn:solid-server:derived:ResourceStore_SelectorInput",
+      "@type": "RepresentationConvertingStore",
+      "source": {
+        "@id": "urn:solid-server:default:ResourceStore_Backend"
+      },
+      "metadataStrategy": {
+        "@id": "urn:solid-server:default:MetadataStrategy"
+      },
+      "options_inConverter": {
+        "@id": "urn:solid-server:default:RepresentationConverter"
+      },
+      "options_outConverter": {
+        "@id": "urn:solid-server:default:RepresentationConverter"
       }
     }
   ]

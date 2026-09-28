@@ -3,7 +3,6 @@ import type {
   ResourceStore,
 } from '@solid/community-server';
 import {
-  asyncToArray,
   getLoggerFor,
   isContainerPath,
   LDP,
@@ -53,20 +52,25 @@ export class GlobSelectorParser extends SelectorParser {
   }
 
   public async handle({ selectors }: DerivationConfig): Promise<ResourceIdentifier[]> {
-    const promises = selectors.map(async(selector): Promise<ResourceIdentifier[]> =>
-      asyncToArray(this.handleSelector(selector)));
-
-    return (await Promise.all(promises)).flat();
+    return (await Promise.all(selectors.map(async(selector): Promise<ResourceIdentifier[]> =>
+      this.handleSelector(selector)))).flat();
   }
 
-  protected async* handleSelector(path: string): AsyncIterable<ResourceIdentifier> {
+  /**
+   * The identifiers matching a selector.
+   *
+   * Every child of a container is handled at once rather than one after the other: building the
+   * input of a derived resource walks a whole pod, and awaiting each resource in turn made that walk
+   * cost the latency of every lookup in it. The order of the results is still that of the children.
+   */
+  protected async handleSelector(path: string): Promise<ResourceIdentifier[]> {
     const match = /\*\*?/u.exec(path);
     if (!match) {
       if (await this.store.hasResource({ path })) {
         this.logger.debug(`Returning selector ${path} as an identifier`);
-        return yield { path };
+        return [{ path }];
       }
-      return;
+      return [];
     }
     // There is (at least) 1 glob pattern in the path
     const head = path.slice(0, match.index);
@@ -79,12 +83,12 @@ export class GlobSelectorParser extends SelectorParser {
     const params: GlobParameters = { glob, head, tail, childPaths };
 
     if (!head.endsWith('/') || (tail.length > 0 && !tail.startsWith('/'))) {
-      yield* this.handleInternalGlob(params);
-    } else if (glob === '**') {
-      yield* this.handleDouble(params);
-    } else if (glob === '*') {
-      yield* this.handleSingle(params);
+      return this.handleInternalGlob(params);
     }
+    if (glob === '**') {
+      return this.handleDouble(params);
+    }
+    return this.handleSingle(params);
   }
 
   /**
@@ -92,69 +96,69 @@ export class GlobSelectorParser extends SelectorParser {
    * E.g., `/foo/*.js`.
    * `**` is treated identical as `*` in this case.
    */
-  protected async* handleInternalGlob({ glob, head, tail, childPaths }: GlobParameters):
-  AsyncIterable<ResourceIdentifier> {
+  protected async handleInternalGlob({ glob, head, tail, childPaths }: GlobParameters):
+  Promise<ResourceIdentifier[]> {
     const parts = tail.split('/');
     const subTail = parts[0].slice(glob.length) + (parts.length > 1 ? '/' : '');
     // In case there are still characters remaining, we should only find the containers and append them
     const rest = parts.slice(1).join('/');
+    // If a filter handles only (e.g.) **/*.nq and our child paths are URLs (without extension)
+    // we need to find the contentType of the path, map it to extensions using customTypes
+    // and if we get a match run selector again
+    const expectedContentType = this.customTypes[subTail];
 
     this.logger.debug(`Recursively handling all paths starting with "${head}" and ending with "${subTail}"`);
-    for (const child of childPaths) {
-      if (!child.startsWith(head)){
-        continue;
+    return this.handleChildren(childPaths.filter((child): boolean => child.startsWith(head)), async(child) => {
+      if (child.endsWith(subTail)) {
+        return this.handleSelector(`${child}${rest}`);
       }
-
-      if (child.endsWith(subTail)){
-        yield* this.handleSelector(`${child}${rest}`);
+      if (!expectedContentType) {
+        return [];
       }
-      // If a filter handles only (e.g.) **/*.nq and our child paths are URLs (without extension)
-      // we need to find the contentType of the path, map it to extensions using customTypes
-      // and if we get a match run selector again
-      const expectedContentType = this.customTypes[subTail];
-      if (!expectedContentType){
-        return;
-      }
-
-      const link = await this.mapper.mapUrlToFilePath(
-        { path: child }, false
-      );
-
-      if (link.contentType === expectedContentType) {
-        yield* this.handleSelector(`${child}${rest}`);
-      }
-    }
+      const link = await this.mapper.mapUrlToFilePath({ path: child }, false);
+      return link.contentType === expectedContentType ? this.handleSelector(`${child}${rest}`) : [];
+    });
   }
 
   /**
    * Handles the case of having a `**` in the path.
    */
-  protected async* handleDouble({ head, tail, childPaths }: GlobParameters): AsyncIterable<ResourceIdentifier> {
-    // Just removing the `**`
-    yield* this.handleSelector(`${head}${tail.slice(1)}`);
-
-    for (const child of childPaths) {
-      if (isContainerPath(child)) {
-        this.logger.debug(`Recursively handling all paths matching ${child}**${tail}`);
-        yield* this.handleSelector(`${child}**${tail}`);
-      } else if (tail.length === 0) {
+  protected async handleDouble({ head, tail, childPaths }: GlobParameters): Promise<ResourceIdentifier[]> {
+    const [ withoutGlob, children ] = await Promise.all([
+      // Just removing the `**`
+      this.handleSelector(`${head}${tail.slice(1)}`),
+      this.handleChildren(childPaths, async(child) => {
+        if (isContainerPath(child)) {
+          this.logger.debug(`Recursively handling all paths matching ${child}**${tail}`);
+          return this.handleSelector(`${child}**${tail}`);
+        }
         // Only yielding documents here as the containers will be yielded in the recursive call above
-        yield* this.handleSelector(child);
-      }
-    }
+        return tail.length === 0 ? this.handleSelector(child) : [];
+      }),
+    ]);
+    return [ ...withoutGlob, ...children ];
   }
 
   /**
    * Handles the case of having a `*` in the path.
    */
-  protected async* handleSingle({ tail, childPaths }: GlobParameters): AsyncIterable<ResourceIdentifier> {
-    for (const child of childPaths) {
+  protected async handleSingle({ tail, childPaths }: GlobParameters): Promise<ResourceIdentifier[]> {
+    return this.handleChildren(childPaths, async(child) => {
       if (isContainerPath(child) && tail.length > 0) {
         this.logger.debug(`Recursively handling all paths matching ${child}${tail.slice(1)}`);
-        yield* this.handleSelector(`${child}${tail.slice(1)}`);
-      } else if (tail.length === 0) {
-        yield* this.handleSelector(child);
+        return this.handleSelector(`${child}${tail.slice(1)}`);
       }
-    }
+      return tail.length === 0 ? this.handleSelector(child) : [];
+    });
+  }
+
+  /**
+   * Handles every child at once, keeping the results in the order of the children.
+   */
+  protected async handleChildren(
+    childPaths: string[],
+    handleChild: (child: string) => Promise<ResourceIdentifier[]>,
+  ): Promise<ResourceIdentifier[]> {
+    return (await Promise.all(childPaths.map(handleChild))).flat();
   }
 }

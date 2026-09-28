@@ -1,4 +1,4 @@
-import type { ResourceStore } from '@solid/community-server';
+import type { FileIdentifierMapper, ResourceStore } from '@solid/community-server';
 import { BasicRepresentation, LDP, RepresentationMetadata } from '@solid/community-server';
 import type { DerivationConfig } from '../../../src/DerivationConfig';
 import { GlobSelectorParser } from '../../../src/selector/GlobSelectorParser';
@@ -22,7 +22,9 @@ describe('GlobSelectorHandler', (): void => {
       getRepresentation: jest.fn().mockResolvedValue(new BasicRepresentation([], '')),
     } satisfies Partial<ResourceStore> as any;
 
-    handler = new GlobSelectorParser(store);
+    // Only consulted for globs ending in a custom type extension, which these cases do not use
+    const mapper = { mapUrlToFilePath: jest.fn() } satisfies Partial<FileIdentifierMapper> as any;
+    handler = new GlobSelectorParser(store, mapper);
   });
 
   function setMetadata(paths: string[]): void {

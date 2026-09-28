@@ -15,6 +15,7 @@ export const DERIVED = createVocabulary(
 
 export const DERIVED_TYPES = createVocabulary(
   'urn:npm:solid:derived-resources:types:',
+  'PatternBatch',
   'QPF',
   'QuadPattern',
   'Shacl',
