@@ -1,8 +1,10 @@
 import { once } from 'node:events';
 import type { Representation, ResourceStore } from '@solid/community-server';
-import { DC, getLoggerFor } from '@solid/community-server';
+import { DC } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { Store } from 'n3';
 import type { DerivationConfig } from '../DerivationConfig';
+import type { HdtIndexLocator } from '../hdt/HdtIndexLocator';
 import type { PooledStore, SelectorStorePool } from '../SelectorStorePool';
 import { BaseSelectorHandler } from './BaseSelectorHandler';
 import type { SelectorParser } from './SelectorParser';
@@ -25,12 +27,41 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
    */
   protected readonly pending: Record<string, Promise<PooledStore> | undefined> = {};
 
-  public constructor(parser: SelectorParser, store: ResourceStore, pool: SelectorStorePool) {
+  protected readonly hdtIndex?: HdtIndexLocator;
+
+  /**
+   * @param parser - Determines the inputs the selectors select.
+   * @param store - Store to read inputs from.
+   * @param pool - Pool of the stores built.
+   * @param hdtIndex - Finds an HDT index holding the selected inputs. If one is found, the store is
+   * only built once an executor asks for it, as executors can query the index instead.
+   */
+  public constructor(
+    parser: SelectorParser,
+    store: ResourceStore,
+    pool: SelectorStorePool,
+    hdtIndex?: HdtIndexLocator,
+  ) {
     super(parser, store);
     this.pool = pool;
+    this.hdtIndex = hdtIndex;
   }
 
   public override async handle(config: DerivationConfig): Promise<Representation[]> {
+    const index = await this.hdtIndex?.locate(config.selectors);
+    if (index) {
+      this.logger.debug(`Found HDT index ${index.path} for selectors: [${config.selectors.join(', ')}]`);
+      const getStore = async(): Promise<Store> => (await this.getPooledStore(config)).store;
+      return [ createStoreRepresentation(getStore, config.identifier, index.modified, index.path) ];
+    }
+    const pooled = await this.getPooledStore(config);
+    return [ createStoreRepresentation(pooled.store, config.identifier, pooled.modified) ];
+  }
+
+  /**
+   * The pooled store of the selected inputs, built if it is not in the pool yet.
+   */
+  protected async getPooledStore(config: DerivationConfig): Promise<PooledStore> {
     // Check if the N3.Store is already cached in the pool
     const cached = this.pool.getStore(config.selectors);
 
@@ -39,7 +70,7 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
         // Not the size: an N3 store counts its quads to report it, and this runs on every hit
         `SelectorStorePool hit for selectors: [${config.selectors.join(', ')}]`,
       );
-      return [ createStoreRepresentation(cached.store, config.identifier, cached.modified) ];
+      return cached;
     }
     // Check if a previous request was already building the cache. If so use that promise
     // instead of restarting it
@@ -58,8 +89,7 @@ export class SelectorHandlerCachedStore extends BaseSelectorHandler {
       this.pending[key] = build;
     }
 
-    const pooled = await build;
-    return [ createStoreRepresentation(pooled.store, config.identifier, pooled.modified) ];
+    return build;
   }
 
   /**

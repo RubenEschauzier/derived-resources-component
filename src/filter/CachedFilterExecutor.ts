@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Representation } from '@solid/community-server';
-import { DC, getLoggerFor } from '@solid/community-server';
+import { DC } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { LRUCache } from 'lru-cache';
 import type {
   CachedRepresentation,

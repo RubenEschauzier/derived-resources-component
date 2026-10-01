@@ -1,9 +1,16 @@
-import { QueryEngine } from '@comunica/query-sparql';
+import { QueryEngine } from '@comunica/query-sparql-hdt';
 import type { App } from '@solid/community-server';
-import { AppRunner, joinFilePath, joinUrl, LDP, RDF } from '@solid/community-server';
+import {
+  AppRunner,
+  joinFilePath,
+  joinUrl,
+  LDP,
+  RDF,
+} from '@solid/community-server';
 import { DataFactory, Parser, Store } from 'n3';
 import { DERIVED_INDEX } from '../../src/Vocabularies';
-import namedNode = DataFactory.namedNode;
+
+const { namedNode } = DataFactory;
 
 async function responseToStore(res: Response, baseIRI: string): Promise<Store> {
   return new Store(new Parser({ baseIRI }).parse(await res.text()));

@@ -1,7 +1,8 @@
 {
   "@context": [
-    "https://linkedsoftwaredependencies.org/bundles/npm/@solid/community-server/^7.0.0/components/context.jsonld",
-    "https://linkedsoftwaredependencies.org/bundles/npm/@solidlab/derived-resources-component/^1.0.0/components/context.jsonld"
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solid/community-server/^8.0.0/components/context.jsonld",
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solidlab/derived-resources-component/^1.0.0/components/context.jsonld",
+    "https://linkedsoftwaredependencies.org/bundles/npm/asynchronous-handlers/^1.0.0/components/context.jsonld"
   ],
   "@graph": [
     {
@@ -49,8 +50,14 @@
             }
           },
           {
-            "@type": "PermissionBasedAuthorizer",
-            "resourceSet": { "@id": "urn:solid-server:default:CachedResourceSet" }
+            "comment": "The authorizer of css:config/ldp/handler/components/authorizer.json, which this override replaces.",
+            "@type": "ReadDeleteAuthorizer",
+            "resourceSet": { "@id": "urn:solid-server:default:CachedResourceSet" },
+            "identifierStrategy": { "@id": "urn:solid-server:default:IdentifierStrategy" },
+            "source": {
+              "@id": "urn:solid-server:default:PermissionBasedAuthorizer",
+              "@type": "PermissionBasedAuthorizer"
+            }
           }
         ]
       }

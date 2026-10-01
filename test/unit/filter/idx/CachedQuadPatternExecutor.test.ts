@@ -1,7 +1,12 @@
 import type { Readable } from 'node:stream';
 import type { Quad } from '@rdfjs/types';
 import type { Guarded, Representation } from '@solid/community-server';
-import { BasicRepresentation, DC, guardedStreamFrom, readableToQuads } from '@solid/community-server';
+import {
+  BasicRepresentation,
+  DC,
+  guardedStreamFrom,
+  readableToQuads,
+} from '@solid/community-server';
 import { DataFactory, Store } from 'n3';
 import { BaseQuadPatternExecutor } from '../../../../src/filter/idx/BaseQuadPatternExecutor';
 import { CachedQuadPatternExecutor } from '../../../../src/filter/idx/CachedQuadPatternExecutor';

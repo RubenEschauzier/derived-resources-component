@@ -15,7 +15,8 @@ import { QpfFilterExecutor } from '../../../../src/filter/idx/QpfFilterExecutor'
 import type { QuadPatternExecutor } from '../../../../src/filter/idx/QuadPatternExecutor';
 import type { QueryResourceIdentifier } from '../../../../src/QueryResourceIdentifier';
 import { DERIVED_TYPES, FOAF, HYDRA, RDF, SD, VOID } from '../../../../src/Vocabularies';
-import namedNode = DataFactory.namedNode;
+
+const { namedNode } = DataFactory;
 
 describe('QpfFilterExecutor', (): void => {
   let quads: Quad[];

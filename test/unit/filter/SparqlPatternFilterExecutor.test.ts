@@ -1,4 +1,4 @@
-import { QueryEngine } from '@comunica/query-sparql';
+import { QueryEngine } from '@comunica/query-sparql-hdt';
 import { RepresentationMetadata, readableToString } from '@solid/community-server';
 import { DataFactory, Store } from 'n3';
 import type { DerivationConfig } from '../../../src/DerivationConfig';
@@ -47,19 +47,19 @@ describe('SparqlPatternFilterExecutor', (): void => {
 
   async function run(query: string): Promise<string> {
     const filter = sparqlFilter(query);
-    await executor.canHandle({ config, filter, data });
-    const representation = await executor.handle({ config, filter, data });
+    await executor.canHandle({ config, filter, getData: async(): Promise<Store> => data });
+    const representation = await executor.handle({ config, filter, getData: async(): Promise<Store> => data });
     return readableToString(representation.data);
   }
 
   async function rejects(query: string): Promise<void> {
-    await expect(executor.canHandle({ config, filter: sparqlFilter(query), data })).rejects.toThrow();
+    await expect(executor.canHandle({ config, filter: sparqlFilter(query), getData: async(): Promise<Store> => data })).rejects.toThrow();
   }
 
   describe('the subset it claims', (): void => {
     it('rejects filters that are not SPARQL.', async(): Promise<void> => {
       const filter = { ...sparqlFilter('SELECT * WHERE { ?s ?p ?o }'), type: DERIVED_TYPES.terms.Shacl };
-      await expect(executor.canHandle({ config, filter, data })).rejects.toThrow();
+      await expect(executor.canHandle({ config, filter, getData: async(): Promise<Store> => data })).rejects.toThrow();
     });
 
     it.each([
@@ -89,8 +89,8 @@ describe('SparqlPatternFilterExecutor', (): void => {
 
     async function constructQuads(query: string): Promise<any[]> {
       const filter = sparqlFilter(query);
-      await executor.canHandle({ config, filter, data });
-      const representation = await executor.handle({ config, filter, data });
+      await executor.canHandle({ config, filter, getData: async(): Promise<Store> => data });
+      const representation = await executor.handle({ config, filter, getData: async(): Promise<Store> => data });
       const quads: any[] = [];
       for await (const q of representation.data) {
         quads.push(q);
@@ -165,8 +165,8 @@ describe('SparqlPatternFilterExecutor', (): void => {
 
     it('returns quads for a construct.', async(): Promise<void> => {
       const filter = sparqlFilter(`CONSTRUCT { ?s <${P}> ?o } WHERE { ?s <${P}> ?o }`);
-      await executor.canHandle({ config, filter, data });
-      const representation = await executor.handle({ config, filter, data });
+      await executor.canHandle({ config, filter, getData: async(): Promise<Store> => data });
+      const representation = await executor.handle({ config, filter, getData: async(): Promise<Store> => data });
       expect(representation.metadata.contentType).toBe('internal/quads');
 
       const quads: any[] = [];
@@ -247,6 +247,12 @@ describe('SparqlPatternFilterExecutor', (): void => {
 
   it('fails if handle is called without canHandle.', async(): Promise<void> => {
     const filter = sparqlFilter(`SELECT * WHERE { ?s <${P}> ?o } LIMIT 1`);
-    await expect(executor.handle({ config, filter, data })).rejects.toThrow('Calling handle before calling canHandle');
+    await expect(executor.handle({ config, filter, getData: async(): Promise<Store> => data })).rejects.toThrow('Calling handle before calling canHandle');
+  });
+
+  it('leaves data held in an HDT file to the executors querying that file.', async(): Promise<void> => {
+    const filter = sparqlFilter(`SELECT * WHERE { ?s <${P}> ?o }`);
+    await expect(executor.canHandle({ config, filter, getData: async(): Promise<Store> => data, hdtPath: '/pod/.index.hdt' }))
+      .rejects.toThrow('queried on that file instead');
   });
 });

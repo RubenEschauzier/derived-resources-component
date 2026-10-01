@@ -4,11 +4,11 @@ import type { Representation } from '@solid/community-server';
 import {
   BasicRepresentation,
   createErrorMessage,
-  getLoggerFor,
   INTERNAL_QUADS,
   InternalServerError,
   NotImplementedHttpError,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { LRUCache } from 'lru-cache';
 import { DataFactory } from 'n3';
 import { Parser } from 'sparqljs';
@@ -79,22 +79,27 @@ export class SparqlPatternFilterExecutor extends N3FilterExecutor<string> {
     this.plans = new LRUCache<string, Plan>({ max: cacheSettings?.max ?? 100 });
   }
 
-  public async canHandle({ filter }: N3FilterExecutorInput): Promise<void> {
+  public async canHandle({ filter, hdtPath }: N3FilterExecutorInput): Promise<void> {
     if (!filter.type.equals(DERIVED_TYPES.terms.Sparql)) {
       throw new NotImplementedHttpError('Only SPARQL filters are supported.');
+    }
+    // Matching the pattern needs the store, which data held in an HDT file does not need to be loaded into
+    if (hdtPath) {
+      throw new NotImplementedHttpError('Data held in an HDT file is queried on that file instead.');
     }
     if (!this.getPlan(filter.data as string)) {
       throw new NotImplementedHttpError('Only single triple pattern SELECT/CONSTRUCT is supported.');
     }
   }
 
-  public async handle({ filter, data, config }: N3FilterExecutorInput): Promise<Representation> {
+  public async handle({ filter, getData, config }: N3FilterExecutorInput): Promise<Representation> {
     const query = filter.data as string;
     const plan = this.getPlan(query);
     if (!plan) {
       throw new InternalServerError('Calling handle before calling canHandle');
     }
 
+    const data = await getData();
     try {
       // `null` for the graph matches quads in every graph, which is what the query engine does
       // when the store is handed to it as a single source.

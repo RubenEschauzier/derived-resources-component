@@ -32,9 +32,12 @@ export * from './filter/FilterHandler';
 export * from './filter/LatestFilterExecutor';
 export * from './filter/N3FilterExecutor';
 export * from './filter/ShaclFilterExecutor';
+export * from './filter/SharedQueryEngine';
 export * from './filter/SparqlPatternFilterExecutor';
 export * from './filter/SparqlFilterExecutor';
 export * from './filter/StoreDataFilterExecutor';
+
+export * from './hdt/HdtIndexLocator';
 
 export * from './init/ParamInitializer';
 export * from './init/ParamSetter';

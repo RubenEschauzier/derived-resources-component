@@ -3,11 +3,11 @@ import type {
   ResourceIdentifier,
 } from '@solid/community-server';
 import {
-  getLoggerFor,
   InternalServerError,
   NotImplementedHttpError,
   RepresentationMetadata,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import Template from 'uri-template-lite';
 import type { DerivationConfig } from '../DerivationConfig';
 import { isQueryResourceIdentifier } from '../QueryResourceIdentifier';

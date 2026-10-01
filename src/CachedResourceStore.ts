@@ -10,9 +10,9 @@ import type {
   SingleThreaded,
 } from '@solid/community-server';
 import {
-  getLoggerFor,
   PassthroughStore,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { LRUCache } from 'lru-cache';
 import type {
   CachedRepresentation,

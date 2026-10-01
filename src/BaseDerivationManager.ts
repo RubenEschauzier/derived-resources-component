@@ -5,8 +5,8 @@ import type {
 } from '@solid/community-server';
 import {
   createErrorMessage,
-  getLoggerFor,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import type { DerivationMatcher } from './config/DerivationMatcher';
 import type { DerivationConfig } from './DerivationConfig';
 import type { DerivationManager } from './DerivationManager';

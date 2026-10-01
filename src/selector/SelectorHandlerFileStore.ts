@@ -3,9 +3,10 @@ import { createReadStream, promises as fsPromises } from 'node:fs';
 import { once } from 'node:events';
 import { join, relative, sep } from 'node:path';
 import type { FileIdentifierMapper, ResourceStore } from '@solid/community-server';
-import { getLoggerFor } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { Store, StreamParser } from 'n3';
 import type { DerivationConfig } from '../DerivationConfig';
+import type { HdtIndexLocator } from '../hdt/HdtIndexLocator';
 import type { PooledStore, SelectorStorePool } from '../SelectorStorePool';
 import { SelectorHandlerCachedStore } from './SelectorHandlerCachedStore';
 import type { SelectorParser } from './SelectorParser';
@@ -39,9 +40,16 @@ export class SelectorHandlerFileStore extends SelectorHandlerCachedStore {
   protected readonly logger = getLoggerFor(this);
   protected readonly mapper: FileIdentifierMapper;
 
+  /**
+   * @param parser - Determines the inputs the selectors select, for selectors not resolved on disk.
+   * @param store - Store to read those inputs from.
+   * @param pool - Pool of the stores built.
+   * @param mapper - Maps selectors to the directories they select from.
+   * @param hdtIndex - Finds an HDT index holding the selected inputs, see {@link SelectorHandlerCachedStore}.
+   */
   public constructor(parser: SelectorParser, store: ResourceStore, pool: SelectorStorePool,
-    mapper: FileIdentifierMapper) {
-    super(parser, store, pool);
+    mapper: FileIdentifierMapper, hdtIndex?: HdtIndexLocator) {
+    super(parser, store, pool, hdtIndex);
     this.mapper = mapper;
   }
 

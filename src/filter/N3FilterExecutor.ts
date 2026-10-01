@@ -1,5 +1,5 @@
 import type { Representation } from '@solid/community-server';
-import { AsyncHandler } from '@solid/community-server';
+import { AsyncHandler } from 'asynchronous-handlers';
 import type { Store } from 'n3';
 import type { DerivationConfig } from '../DerivationConfig';
 import type { Filter } from './Filter';
@@ -14,9 +14,13 @@ export interface N3FilterExecutorInput<T = unknown> {
    */
   filter: Filter<T>;
   /**
-   * N3.js store containing the triples to apply the filter to.
+   * N3.js store containing the triples to apply the filter to. It may only be built once asked for.
    */
-  data: Store;
+  getData: () => Promise<Store>;
+  /**
+   * Path of an HDT file holding the same triples, which executors can query instead.
+   */
+  hdtPath?: string;
 }
 
 /**

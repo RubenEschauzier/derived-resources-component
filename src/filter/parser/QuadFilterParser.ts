@@ -1,10 +1,10 @@
 import {
   createErrorMessage,
-  getLoggerFor,
   InternalServerError,
   NotImplementedHttpError,
   RepresentationMetadata,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { Parser, Store } from 'n3';
 import type { DerivationConfig } from '../../DerivationConfig';
 import { DERIVED_TYPES } from '../../Vocabularies';
@@ -19,7 +19,7 @@ import { FilterParser } from './FilterParser';
 export class QuadFilterParser extends FilterParser<Store> {
   protected readonly logger = getLoggerFor(this);
 
-  protected readonly cache = new WeakMap<DerivationConfig, Store>();
+  protected readonly cache: WeakMap<DerivationConfig, Store> = new WeakMap();
 
   public async canHandle(input: DerivationConfig): Promise<void> {
     const parser = new Parser();

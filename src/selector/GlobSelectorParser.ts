@@ -3,10 +3,10 @@ import type {
   ResourceStore,
 } from '@solid/community-server';
 import {
-  getLoggerFor,
   isContainerPath,
   LDP,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import type { DerivationConfig } from '../DerivationConfig';
 import { SelectorParser } from './SelectorParser';
 import type { FileIdentifierMapper } from '@solid/community-server';

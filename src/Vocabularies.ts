@@ -1,4 +1,5 @@
-import { createVocabulary, extendVocabulary, FOAF as FOAF_CSS, RDF as RDF_CSS } from '@solid/community-server';
+import { FOAF as FOAF_CSS, RDF as RDF_CSS } from '@solid/community-server';
+import { createVocabulary, extendVocabulary } from 'rdf-vocabulary';
 
 export const DERIVED = createVocabulary(
   'urn:npm:solid:derived-resources:',

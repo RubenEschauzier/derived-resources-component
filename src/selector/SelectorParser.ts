@@ -1,5 +1,5 @@
 import type { ResourceIdentifier } from '@solid/community-server';
-import { AsyncHandler } from '@solid/community-server';
+import { AsyncHandler } from 'asynchronous-handlers';
 import type { DerivationConfig } from '../DerivationConfig';
 
 /**

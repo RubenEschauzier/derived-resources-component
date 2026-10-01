@@ -2,8 +2,9 @@ import { InternalServerError, NotImplementedHttpError, RepresentationMetadata } 
 import { DataFactory } from 'n3';
 import { TemplateDerivationMatcher } from '../../../src/config/TemplateDerivationMatcher';
 import { DERIVED } from '../../../src/Vocabularies';
-import literal = DataFactory.literal;
-import namedNode = DataFactory.namedNode;
+
+const { literal } = DataFactory;
+const { namedNode } = DataFactory;
 
 describe('TemplateDerivationMatcher', (): void => {
   const identifier = { path: 'https://example.com/foo' };

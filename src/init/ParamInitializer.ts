@@ -1,4 +1,5 @@
-import { createErrorMessage, getLoggerFor, Initializer } from '@solid/community-server';
+import { createErrorMessage, Initializer } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import type { ParamSetter } from './ParamSetter';
 
 /**

@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import type { Quad } from '@rdfjs/types';
 import {
@@ -115,5 +116,39 @@ describe('PatternBatchFilterExecutor', (): void => {
     const representation = await executor.handle(input({ p0: `${EX}likes` }));
     const store = await readableToQuads(representation.data);
     expect(store.countQuads(null, namedNode(`${EX}likes`), null, null)).toBe(3);
+  });
+
+  describe('with the inputs held in an HDT file', (): void => {
+    const hdtPath = join(__dirname, '../../assets/hdt/.index.hdt');
+    const FOAF = 'http://xmlns.com/foaf/0.1/';
+
+    async function hdtResults(query: Record<string, string>, build: () => Promise<Store>): Promise<string[]> {
+      const batch = input(query);
+      batch.representations = [ createStoreRepresentation(build, { path: `${EX}input` }, new Date(), hdtPath) ];
+      const found = (await readableToQuads((await executor.handle(batch)).data)).getQuads(null, null, null, null);
+      return found.map((quad): string => `${quad.subject.value} ${quad.predicate.value} ${quad.object.value}`).sort();
+    }
+
+    it('matches every pattern against the file without building the store.', async(): Promise<void> => {
+      const build = jest.fn(async(): Promise<Store> => new Store(quads));
+      await expect(hdtResults({ p0: `${FOAF}name`, s1: '?x', p1: `${FOAF}knows`, o1: '?x' }, build)).resolves.toEqual([
+        `b1 ${FOAF}name Blank`,
+        `http://example.com/pod/alice ${FOAF}name Alice`,
+        `http://example.com/pod/bob ${FOAF}knows http://example.com/pod/bob`,
+        `http://example.com/pod/bob ${FOAF}name Bob`,
+      ]);
+      expect(build).not.toHaveBeenCalled();
+    });
+
+    it('matches the default graph, and nothing in any other graph.', async(): Promise<void> => {
+      const build = jest.fn(async(): Promise<Store> => new Store(quads));
+      await expect(hdtResults({ p0: `${FOAF}knows`, g0: 'urn:default', p1: `${FOAF}knows`, g1: `${EX}g` }, build))
+        .resolves.toHaveLength(2);
+    });
+
+    it('matches blank nodes by their label in the file.', async(): Promise<void> => {
+      const build = jest.fn(async(): Promise<Store> => new Store(quads));
+      await expect(hdtResults({ s0: '_:b1' }, build)).resolves.toEqual([ `b1 ${FOAF}name Blank` ]);
+    });
   });
 });

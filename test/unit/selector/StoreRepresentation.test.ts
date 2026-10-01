@@ -17,11 +17,12 @@ describe('StoreRepresentation', (): void => {
     ]);
   });
 
-  it('exposes the store itself and the modified date.', (): void => {
+  it('exposes the store itself and the modified date.', async(): Promise<void> => {
     const representation = createStoreRepresentation(store, identifier, modified);
 
     expect(isStoreRepresentation(representation)).toBe(true);
-    expect(representation.store).toBe(store);
+    await expect(representation.getStore()).resolves.toBe(store);
+    expect(representation.hdtPath).toBeUndefined();
     expect(representation.metadata.contentType).toBe('internal/quads');
     expect(representation.metadata.get(DC.terms.modified)?.value).toBe(modified.toISOString());
   });
@@ -44,7 +45,7 @@ describe('StoreRepresentation', (): void => {
   });
 
   it('does not read the store until the stream is consumed.', (): void => {
-    // Consumers holding a StoreRepresentation use `.store` and never touch `.data`, so building
+    // Consumers holding a StoreRepresentation use `getStore` and never touch `.data`, so building
     // the representation must not copy the store. This is the difference between costing nothing
     // and copying every quad of a pod on every request.
     const getQuads = jest.spyOn(store, 'getQuads');
@@ -60,8 +61,31 @@ describe('StoreRepresentation', (): void => {
     createStoreRepresentation(store, identifier, modified);
 
     expect(getQuads).not.toHaveBeenCalled();
-    expect(readQuads).toHaveBeenCalledTimes(1);
+    expect(readQuads).not.toHaveBeenCalled();
     expect(pulled).toBe(0);
+  });
+
+  it('only builds a lazy store once asked for, and carries the HDT file of its data.', async(): Promise<void> => {
+    const build = jest.fn(async(): Promise<Store> => store);
+    const representation = createStoreRepresentation(build, identifier, modified, '/pod/.index.hdt');
+
+    expect(isStoreRepresentation(representation)).toBe(true);
+    expect(representation.hdtPath).toBe('/pod/.index.hdt');
+    expect(build).not.toHaveBeenCalled();
+    await expect(representation.getStore()).resolves.toBe(store);
+    expect(build).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds a lazy store when its data stream is read.', async(): Promise<void> => {
+    const build = jest.fn(async(): Promise<Store> => store);
+    const representation = createStoreRepresentation(build, identifier, modified);
+
+    const quads: unknown[] = [];
+    for await (const q of representation.data) {
+      quads.push(q);
+    }
+    expect(build).toHaveBeenCalledTimes(1);
+    expect(quads).toHaveLength(3);
   });
 
   it('reflects later additions to the store, since the stream is lazy.', async(): Promise<void> => {

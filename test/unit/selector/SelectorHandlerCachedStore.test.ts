@@ -1,8 +1,14 @@
 import { DataFactory, Store } from 'n3';
-import { INTERNAL_QUADS, BasicRepresentation, DC, updateModifiedDate } from '@solid/community-server';
+import {
+  INTERNAL_QUADS,
+  BasicRepresentation,
+  DC,
+  updateModifiedDate,
+} from '@solid/community-server';
 import type { ResourceIdentifier, ResourceStore } from '@solid/community-server';
 import { Readable } from 'node:stream';
 import type { DerivationConfig } from '../../../src/DerivationConfig';
+import type { HdtIndexLocator } from '../../../src/hdt/HdtIndexLocator';
 import { SelectorStorePool } from '../../../src/SelectorStorePool';
 import { SelectorHandlerCachedStore } from '../../../src/selector/SelectorHandlerCachedStore';
 import { isStoreRepresentation } from '../../../src/selector/StoreRepresentation';
@@ -60,9 +66,9 @@ describe('SelectorHandlerCachedStore', (): void => {
     expect(isStoreRepresentation(rep)).toBe(true);
 
     if (isStoreRepresentation(rep)) {
-      expect(rep.store.size).toBe(2);
-      expect(rep.store.countQuads(namedNode('http://example.com/foo'), null, null, null)).toBe(1);
-      expect(rep.store.countQuads(namedNode('http://example.com/bar'), null, null, null)).toBe(1);
+      expect((await rep.getStore()).size).toBe(2);
+      expect((await rep.getStore()).countQuads(namedNode('http://example.com/foo'), null, null, null)).toBe(1);
+      expect((await rep.getStore()).countQuads(namedNode('http://example.com/bar'), null, null, null)).toBe(1);
     }
 
     expect(pool.hasStore(config.selectors)).toBe(true);
@@ -89,8 +95,8 @@ describe('SelectorHandlerCachedStore', (): void => {
     expect(isStoreRepresentation(rep)).toBe(true);
 
     if (isStoreRepresentation(rep)) {
-      expect(rep.store).toBe(cachedStore);
-      expect(rep.store.size).toBe(1);
+      expect((await rep.getStore())).toBe(cachedStore);
+      expect((await rep.getStore()).size).toBe(1);
     }
     // The pooled timestamp is replayed, as the backend is not contacted to get a fresh one
     expect(rep.metadata.get(DC.terms.modified)?.value).toBe(modified.toISOString());
@@ -124,9 +130,9 @@ describe('SelectorHandlerCachedStore', (): void => {
     for (const [ rep ] of [ first, second, third ]) {
       expect(isStoreRepresentation(rep)).toBe(true);
     }
-    expect((first[0] as any).store).toBe((second[0] as any).store);
-    expect((second[0] as any).store).toBe((third[0] as any).store);
-    expect((first[0] as any).store.size).toBe(2);
+    expect((await (first[0] as any).getStore())).toBe((await (second[0] as any).getStore()));
+    expect((await (second[0] as any).getStore())).toBe((await (third[0] as any).getStore()));
+    expect((await (first[0] as any).getStore()).size).toBe(2);
   });
 
   it('lets a later request rebuild after a failed build.', async(): Promise<void> => {
@@ -139,5 +145,34 @@ describe('SelectorHandlerCachedStore', (): void => {
     const [ rep ] = await handler.handle(config);
     expect(isStoreRepresentation(rep)).toBe(true);
     expect(pool.hasStore(config.selectors)).toBe(true);
+  });
+
+  describe('with an HDT index of the selected inputs', (): void => {
+    const index = { path: '/pod/.index.hdt', modified: new Date('2024-07-01T00:00:00.000Z') };
+    let hdtIndex: jest.Mocked<HdtIndexLocator>;
+
+    beforeEach(async(): Promise<void> => {
+      hdtIndex = { locate: jest.fn().mockResolvedValue(index) } satisfies Partial<HdtIndexLocator> as any;
+      handler = new SelectorHandlerCachedStore(parser, store, pool, hdtIndex);
+    });
+
+    it('only builds the store once it is asked for.', async(): Promise<void> => {
+      const [ rep ] = await handler.handle(config);
+      expect(hdtIndex.locate).toHaveBeenLastCalledWith(config.selectors);
+      expect(isStoreRepresentation(rep) && rep.hdtPath).toBe(index.path);
+      // Dated by the index, as caches further down the chain need a date before the store exists
+      expect(rep.metadata.get(DC.terms.modified)?.value).toBe(index.modified.toISOString());
+      expect(parser.handle).not.toHaveBeenCalled();
+
+      expect((await (rep as any).getStore()).size).toBe(2);
+      expect(pool.hasStore(config.selectors)).toBe(true);
+    });
+
+    it('builds the store as before for selections without an index.', async(): Promise<void> => {
+      hdtIndex.locate.mockResolvedValueOnce(undefined);
+      const [ rep ] = await handler.handle(config);
+      expect(isStoreRepresentation(rep) && rep.hdtPath).toBeUndefined();
+      expect(parser.handle).toHaveBeenCalledTimes(1);
+    });
   });
 });

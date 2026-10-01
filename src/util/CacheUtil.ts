@@ -6,12 +6,12 @@ import type {
 import {
   BasicRepresentation,
   createErrorMessage,
-  getLoggerFor,
   guardedStreamFrom,
   InternalServerError,
   pipeSafely,
   RepresentationMetadata,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 
 const logger = getLoggerFor('CacheUtil');
 

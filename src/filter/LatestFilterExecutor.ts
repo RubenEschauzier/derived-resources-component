@@ -1,5 +1,10 @@
 import type { Representation } from '@solid/community-server';
-import { DC, InternalServerError, NotFoundHttpError, NotImplementedHttpError } from '@solid/community-server';
+import {
+  DC,
+  InternalServerError,
+  NotFoundHttpError,
+  NotImplementedHttpError,
+} from '@solid/community-server';
 import { DERIVED_TYPES } from '../Vocabularies';
 import type { FilterExecutorInput } from './FilterExecutor';
 import { FilterExecutor } from './FilterExecutor';

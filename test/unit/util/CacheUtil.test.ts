@@ -1,5 +1,10 @@
 import { Readable } from 'node:stream';
-import { BasicRepresentation, CONTENT_TYPE, readableToString, RepresentationMetadata } from '@solid/community-server';
+import {
+  BasicRepresentation,
+  CONTENT_TYPE,
+  readableToString,
+  RepresentationMetadata,
+} from '@solid/community-server';
 import {
   cachedToRepresentation,
   calculateCachedRepresentationSize,

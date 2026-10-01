@@ -1,7 +1,8 @@
 {
   "@context": [
-    "https://linkedsoftwaredependencies.org/bundles/npm/@solid/community-server/^7.0.0/components/context.jsonld",
-    "https://linkedsoftwaredependencies.org/bundles/npm/@solidlab/derived-resources-component/^1.0.0/components/context.jsonld"
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solid/community-server/^8.0.0/components/context.jsonld",
+    "https://linkedsoftwaredependencies.org/bundles/npm/@solidlab/derived-resources-component/^1.0.0/components/context.jsonld",
+    "https://linkedsoftwaredependencies.org/bundles/npm/asynchronous-handlers/^1.0.0/components/context.jsonld"
   ],
   "@graph": [
     {
@@ -79,13 +80,21 @@
               "@type": "WaterfallHandler",
               "handlers": [
                 { "@type": "SparqlPatternFilterExecutor" },
-                { "@type": "SparqlFilterExecutor" },
+                {
+                  "@type": "SparqlFilterExecutor",
+                  "engine": { "@id": "urn:solid-server:derived:SharedQueryEngine" }
+                },
                 { "@type": "ShaclFilterExecutor" }
               ]
             }
           }
         ]
       }
+    },
+    {
+      "comment": "The one Comunica engine every executor that runs queries uses.",
+      "@id": "urn:solid-server:derived:SharedQueryEngine",
+      "@type": "SharedQueryEngine"
     },
     {
       "@id": "urn:solid-server:default:CachedQuadIndexExecutor",

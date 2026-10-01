@@ -1,8 +1,9 @@
 import type { App } from '@solid/community-server';
 import { AppRunner, joinFilePath } from '@solid/community-server';
 import { DataFactory, Parser, Store } from 'n3';
-import literal = DataFactory.literal;
-import namedNode = DataFactory.namedNode;
+
+const { literal } = DataFactory;
+const { namedNode } = DataFactory;
 
 async function responseToStore(res: Response, baseIRI: string): Promise<Store> {
   return new Store(new Parser({ baseIRI }).parse(await res.text()));

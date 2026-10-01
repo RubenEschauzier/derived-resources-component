@@ -9,11 +9,11 @@ import type {
 } from '@solid/community-server';
 import {
   DC,
-  getLoggerFor,
   MethodNotAllowedHttpError,
   NotFoundHttpError,
   PassthroughStore,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import type { DerivationManager } from './DerivationManager';
 
 /**

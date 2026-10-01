@@ -28,7 +28,8 @@ export class StoreDataFilterExecutor extends FilterExecutor {
 
     return this.source.canHandle({
       ...input,
-      data: new Store(),
+      getData: async(): Promise<Store> => new Store(),
+      hdtPath: this.getHdtPath(input.representations),
     });
   }
 
@@ -38,7 +39,8 @@ export class StoreDataFilterExecutor extends FilterExecutor {
     if (input.representations.length === 1 && isStoreRepresentation(firstRep)) {
       return this.source.handle({
         ...input,
-        data: firstRep.store,
+        getData: firstRep.getStore,
+        hdtPath: firstRep.hdtPath,
       });
     }
 
@@ -52,7 +54,15 @@ export class StoreDataFilterExecutor extends FilterExecutor {
 
     return this.source.handle({
       ...input,
-      data,
+      getData: async(): Promise<Store> => data,
     });
+  }
+
+  /**
+   * The HDT file holding the input, if it comes as a single store that has one.
+   */
+  protected getHdtPath(representations: Representation[]): string | undefined {
+    const [ representation ] = representations;
+    return representations.length === 1 && isStoreRepresentation(representation) ? representation.hdtPath : undefined;
   }
 }

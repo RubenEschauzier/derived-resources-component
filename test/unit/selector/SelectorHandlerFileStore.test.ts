@@ -77,14 +77,14 @@ describe('SelectorHandlerFileStore', (): void => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  function subjects(representation: any): string[] {
-    return representation.store.getSubjects(null, null, null).map((term: any) => term.value).sort();
+  async function subjects(representation: any): Promise<string[]> {
+    return (await representation.getStore()).getSubjects(null, null, null).map((term: any) => term.value).sort();
   }
 
   it('reads every file a ** selector matches, below any depth, from disk.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}**/*.nq`));
     expect(isStoreRepresentation(representation)).toBe(true);
-    expect(subjects(representation)).toEqual([
+    expect(await subjects(representation)).toEqual([
       'http://example.com/a',
       'http://example.com/b',
       'http://example.com/card',
@@ -94,19 +94,19 @@ describe('SelectorHandlerFileStore', (): void => {
 
   it('does not select dot files or the directories below dot directories.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}**/*.nq`));
-    expect(subjects(representation)).not.toContain('http://example.com/meta');
-    expect(subjects(representation)).not.toContain('http://example.com/hidden');
+    expect(await subjects(representation)).not.toContain('http://example.com/meta');
+    expect(await subjects(representation)).not.toContain('http://example.com/hidden');
   });
 
   it('keeps * within a single directory.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}posts/*.nq`));
-    expect(subjects(representation)).toEqual([ 'http://example.com/a' ]);
+    expect(await subjects(representation)).toEqual([ 'http://example.com/a' ]);
   });
 
   it('reads a file selected by two selectors once.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}**/*.nq`, `${base}posts/**/*.nq`));
     expect(representation).toBeDefined();
-    expect((representation as any).store.size).toBe(3);
+    expect((await (representation as any).getStore()).size).toBe(3);
   });
 
   it('dates the store by the most recently modified input.', async(): Promise<void> => {
@@ -117,12 +117,12 @@ describe('SelectorHandlerFileStore', (): void => {
 
   it('selects nothing from a container that does not exist.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}missing/**/*.nq`));
-    expect((representation as any).store.size).toBe(0);
+    expect((await (representation as any).getStore()).size).toBe(0);
   });
 
   it('falls back to the resource store for a selector without a glob.', async(): Promise<void> => {
     const [ representation ] = await handler.handle(config(`${base}doc`));
-    expect(subjects(representation)).toEqual([ `${base}doc` ]);
+    expect(await subjects(representation)).toEqual([ `${base}doc` ]);
     expect(store.getRepresentation).toHaveBeenCalledTimes(1);
   });
 

@@ -3,11 +3,8 @@ import type {
   PermissionReader,
   ResourceIdentifier,
 } from '@solid/community-server';
-import {
-  AccessMode,
-  IdentifierSetMultiMap,
-  InternalServerError,
-} from '@solid/community-server';
+import { IdentifierSetMultiMap, InternalServerError } from '@solid/community-server';
+import { PERMISSIONS } from '@solidlab/policy-engine';
 import type { CredentialsStorage } from '../credentials/CredentialsStorage';
 import type { DerivationConfig } from '../DerivationConfig';
 import type { ParamSetter } from '../init/ParamSetter';
@@ -57,12 +54,12 @@ export class AuthorizedSelectorParser extends SelectorParser implements ParamSet
     }
 
     const credentials = await this.storage.get(config.identifier) ?? {};
-    const requestedModes: AccessMap = new IdentifierSetMultiMap<AccessMode>();
+    const requestedModes: AccessMap = new IdentifierSetMultiMap<string>();
     for (const identifier of identifiers) {
-      requestedModes.set(identifier, AccessMode.read);
+      requestedModes.set(identifier, PERMISSIONS.Read);
     }
 
     const permissions = await this.permissionReader.handleSafe({ credentials, requestedModes });
-    return identifiers.filter((identifier): boolean => Boolean(permissions.get(identifier)?.read));
+    return identifiers.filter((identifier): boolean => Boolean(permissions.get(identifier)?.[PERMISSIONS.Read]));
   }
 }

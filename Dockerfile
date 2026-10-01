@@ -11,7 +11,14 @@
 #   docker build -t rubeneschauzier/community-server:dev .
 
 # Build stage
-FROM node:18-alpine AS build
+# The Community Solid Server 8 needs Node.js 22.1 or later
+# Debian rather than Alpine, as the native HDT module does not load against musl
+FROM node:22-bookworm-slim AS build
+
+# The HDT module is native, so it is compiled when installed
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+# Its sources use fixed-width integer types without including <cstdint>, which recent compilers reject
+ENV CXXFLAGS="-include cstdint"
 
 # Set current working directory
 WORKDIR /community-server
@@ -31,7 +38,7 @@ RUN npm prune --omit=dev
 
 
 # Runtime stage
-FROM node:18-alpine
+FROM node:22-bookworm-slim
 
 # Add contact informations for questions about the container
 LABEL maintainer="Ruben Eschauzier <ruben.eschauzier@ugent.be>"

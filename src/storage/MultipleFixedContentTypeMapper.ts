@@ -44,6 +44,15 @@ export class MultipleFixedContentTypeMapper extends BaseFileIdentifierMapper {
     }
   }
 
+  /**
+   * HDT indexes of a pod, and the indexes HDT keeps next to them, are treated like metadata files:
+   * they sit in the pod for derived resources to be answered from, but are not resources themselves.
+   * Otherwise they would be listed in their container, which fails as they have no document URL.
+   */
+  protected isMetadataPath(path: string): boolean {
+    return super.isMetadataPath(path) || /\.hdt(?:\.index\.v[\d-]+)?$/u.test(path);
+  }
+
   protected async getContentTypeFromPath(filePath: string): Promise<string> {
     const extension = getExtension(filePath).toLowerCase();
     if (this.customTypes[extension]) {

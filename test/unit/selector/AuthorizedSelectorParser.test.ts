@@ -2,15 +2,14 @@ import type {
   AccessMap,
   Credentials,
   PermissionReader,
-  PermissionSet,
   ResourceIdentifier,
 } from '@solid/community-server';
+import type { PermissionMap } from '@solidlab/policy-engine';
+import { PERMISSIONS } from '@solidlab/policy-engine';
 import {
-  AccessMode,
   IdentifierMap,
   IdentifierSetMultiMap,
-  InternalServerError
-  ,
+  InternalServerError,
   RepresentationMetadata,
 } from '@solid/community-server';
 import type { CredentialsStorage } from '../../../src/credentials/CredentialsStorage';
@@ -51,7 +50,7 @@ describe('AuthorizedSelectorParser', (): void => {
     } satisfies Partial<CredentialsStorage> as any;
 
     permissionReader = {
-      handleSafe: jest.fn().mockResolvedValue(new IdentifierMap<PermissionSet>([[{ path: 'http://example.com/public' }, { [AccessMode.read]: true }]])),
+      handleSafe: jest.fn().mockResolvedValue(new IdentifierMap<PermissionMap>([[{ path: 'http://example.com/public' }, { [PERMISSIONS.Read]: true }]])),
     } satisfies Partial<PermissionReader> as any;
 
     parser = new AuthorizedSelectorParser(source, storage);
@@ -78,8 +77,8 @@ describe('AuthorizedSelectorParser', (): void => {
     config.metadata.add(DERIVED.terms.feature, DERIVED.terms.ReadableSources);
     await parser.setParam(permissionReader);
     await expect(parser.handle(config)).resolves.toEqual([{ path: 'http://example.com/public' }]);
-    const requestedModes: AccessMap = new IdentifierSetMultiMap<AccessMode>(
-      [[ identifiers[0], AccessMode.read ], [ identifiers[1], AccessMode.read ]],
+    const requestedModes: AccessMap = new IdentifierSetMultiMap<string>(
+      [[ identifiers[0], PERMISSIONS.Read ], [ identifiers[1], PERMISSIONS.Read ]],
     );
     expect(permissionReader.handleSafe).toHaveBeenLastCalledWith({ credentials, requestedModes });
   });

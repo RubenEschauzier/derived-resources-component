@@ -2,7 +2,13 @@ import { once } from 'node:events';
 import { Readable } from 'node:stream';
 import type { Quad, Term } from '@rdfjs/types';
 import type { Representation } from '@solid/community-server';
-import { BadRequestHttpError, BasicRepresentation, INTERNAL_QUADS, NotImplementedHttpError } from '@solid/community-server';
+import {
+  BadRequestHttpError,
+  BasicRepresentation,
+  INTERNAL_QUADS,
+  NotImplementedHttpError,
+} from '@solid/community-server';
+import { fromFile } from 'hdt';
 import { DataFactory, Store } from 'n3';
 import { stringToTerm } from 'rdf-string';
 import { isQueryResourceIdentifier } from '../QueryResourceIdentifier';
@@ -41,6 +47,10 @@ interface BatchPattern {
  * pattern. A quad matching several patterns is returned once for each of them.
  *
  * As in {@link SparqlPatternFilterExecutor}, a pattern without a graph matches quads in every graph.
+ *
+ * Inputs held in an HDT file are matched by looking the patterns up in that file, so their store does
+ * not need to be built. This is done with the HDT library directly rather than through a query engine,
+ * which costs several times more per pattern than the lookup itself.
  */
 export class PatternBatchFilterExecutor extends FilterExecutor {
   protected readonly maxPatterns: number;
@@ -61,8 +71,41 @@ export class PatternBatchFilterExecutor extends FilterExecutor {
 
   public async handle({ representations, config }: FilterExecutorInput): Promise<Representation> {
     const patterns = this.parsePatterns(isQueryResourceIdentifier(config.identifier) ? config.identifier.query : {});
+    const [ representation ] = representations;
+    if (representations.length === 1 && isStoreRepresentation(representation) && representation.hdtPath) {
+      return new BasicRepresentation(
+        Readable.from(this.matchAllHdt(representation.hdtPath, patterns)),
+        config.identifier,
+        INTERNAL_QUADS,
+      );
+    }
     const store = await this.getStore(representations);
     return new BasicRepresentation(Readable.from(this.matchAll(store, patterns)), config.identifier, INTERNAL_QUADS);
+  }
+
+  protected async* matchAllHdt(hdtPath: string, patterns: BatchPattern[]): AsyncIterable<Quad> {
+    // Opening the file only maps it into memory, so it is opened for every batch rather than kept open
+    const document = await fromFile(hdtPath);
+    try {
+      for (const { match, equalities } of patterns) {
+        // An HDT file only holds a default graph
+        if (match.graph && match.graph.termType !== 'DefaultGraph') {
+          continue;
+        }
+        const { triples } = await document.searchTriples(
+          match.subject ?? undefined,
+          match.predicate ?? undefined,
+          match.object ?? undefined,
+        );
+        for (const quad of triples) {
+          if (equalities.every(([ left, right ]): boolean => quad[left].equals(quad[right]))) {
+            yield quad;
+          }
+        }
+      }
+    } finally {
+      await document.close();
+    }
   }
 
   protected* matchAll(store: Store, patterns: BatchPattern[]): Iterable<Quad> {
@@ -80,7 +123,7 @@ export class PatternBatchFilterExecutor extends FilterExecutor {
    */
   protected async getStore(representations: Representation[]): Promise<Store> {
     if (representations.length === 1 && isStoreRepresentation(representations[0])) {
-      return representations[0].store;
+      return representations[0].getStore();
     }
     const store = new Store();
     await Promise.all(representations.map(async(representation): Promise<unknown> =>

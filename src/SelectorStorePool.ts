@@ -1,4 +1,4 @@
-import { getLoggerFor } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { LRUCache } from 'lru-cache';
 import type { Store } from 'n3';
 

@@ -1,9 +1,9 @@
 import {
   createErrorMessage,
-  getLoggerFor,
   NotImplementedHttpError,
   RepresentationMetadata,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { Parser } from 'sparqljs';
 import type { DerivationConfig } from '../../DerivationConfig';
 import { DERIVED_TYPES } from '../../Vocabularies';

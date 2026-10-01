@@ -2,7 +2,13 @@ import type { Readable } from 'node:stream';
 import { PassThrough } from 'node:stream';
 import type { Quad } from '@rdfjs/types';
 import type { Guarded } from '@solid/community-server';
-import { DC, getLoggerFor, guardedStreamFrom, InternalServerError, pipeSafely } from '@solid/community-server';
+import {
+  DC,
+  guardedStreamFrom,
+  InternalServerError,
+  pipeSafely,
+} from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import { LRUCache } from 'lru-cache';
 import { termToString } from 'rdf-string';
 import type { QuadPatternExecutorArgs } from './QuadPatternExecutor';

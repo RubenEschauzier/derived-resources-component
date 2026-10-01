@@ -1,4 +1,4 @@
-import { AsyncHandler } from '@solid/community-server';
+import { AsyncHandler } from 'asynchronous-handlers';
 import type { DerivationConfig } from '../../DerivationConfig';
 import type { Filter } from '../Filter';
 

@@ -13,7 +13,8 @@ import type { DerivationConfig } from '../../src/DerivationConfig';
 import type { FilterHandler } from '../../src/filter/FilterHandler';
 import type { SelectorHandler } from '../../src/selector/SelectorHandler';
 import { DERIVED } from '../../src/Vocabularies';
-import namedNode = DataFactory.namedNode;
+
+const { namedNode } = DataFactory;
 
 describe('BaseDerivationManager', (): void => {
   let config: DerivationConfig;

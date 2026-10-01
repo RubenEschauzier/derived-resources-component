@@ -76,7 +76,7 @@ describe('ShaclFilterExecutor', (): void => {
         type: DERIVED_TYPES.terms.Shacl,
         metadata: new RepresentationMetadata(),
       },
-      data: new Store(new Parser().parse(turtle)),
+      getData: async(): Promise<Store> => new Store(new Parser().parse(turtle)),
     };
   });
 

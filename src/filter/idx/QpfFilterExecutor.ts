@@ -178,7 +178,8 @@ export class QpfFilterExecutor extends FilterExecutor {
     if (!isQueryResourceIdentifier(identifier)) {
       return identifier.path;
     }
-    const search = new URLSearchParams(identifier.query);
-    return `${identifier.path}?${search.toString()}`;
+    const search = new URLSearchParams(identifier.query).toString();
+    // Without parameters this is the URL that was requested, which clients match the page against
+    return search ? `${identifier.path}?${search}` : identifier.path;
   }
 }

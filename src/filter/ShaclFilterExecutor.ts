@@ -3,11 +3,11 @@ import type { Quad, Term } from '@rdfjs/types';
 import type { Representation } from '@solid/community-server';
 import {
   BasicRepresentation,
-  getLoggerFor,
   INTERNAL_QUADS,
   NotImplementedHttpError,
   RDF,
 } from '@solid/community-server';
+import { getLoggerFor } from 'global-logger-factory';
 import type { Store } from 'n3';
 import SHACLValidator from 'rdf-validate-shacl';
 import { DERIVED_TYPES, SH } from '../Vocabularies';
@@ -27,7 +27,7 @@ export class ShaclFilterExecutor extends N3FilterExecutor<Store> {
 
   public async handle(input: N3FilterExecutorInput<Store>): Promise<Representation> {
     return new BasicRepresentation(
-      Readable.from(this.extractMatchingTriples(input.data, input.filter.data)),
+      Readable.from(this.extractMatchingTriples(await input.getData(), input.filter.data)),
       input.config.identifier,
       INTERNAL_QUADS,
     );

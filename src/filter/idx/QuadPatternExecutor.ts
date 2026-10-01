@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream';
 import type { Quad } from '@rdfjs/types';
 import type { Guarded, Representation } from '@solid/community-server';
-import { AsyncHandler } from '@solid/community-server';
+import { AsyncHandler } from 'asynchronous-handlers';
 
 export interface QuadPatternExecutorArgs {
   filter: Partial<Quad>;
